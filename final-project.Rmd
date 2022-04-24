@@ -1,0 +1,15 @@
+---
+title: "ISTA 320 Final Exam"
+author: "Brendan Bertone"
+date: "Spring 2022"
+output: html_document
+---
+  
+  ```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+opts_chunk$set(echo = TRUE)
+```
+
+## Reading the Data In 
+movie_data <- read.csv('data/grossing.csv')
