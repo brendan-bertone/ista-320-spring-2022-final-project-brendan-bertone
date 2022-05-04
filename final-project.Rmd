@@ -5,11 +5,251 @@ date: "Spring 2022"
 output: html_document
 ---
   
-  ```{r setup, include=FALSE}
-library(knitr)
+```{r setup, include=FALSE}
 library(tidyverse)
+library(RColorBrewer)
+library(ggthemes)
+library(knitr)
+library(rcartocolor)
+library(forcats)
 opts_chunk$set(echo = TRUE)
 ```
 
+## Orginal File/Data
+
+### The orginal dataset was from Kaggle (https://www.kaggle.com/datasets/sanjeetsinghnaik/top-1000-highest-grossing-movies ). This dataset contains information about the sales of the Top 1000 highest grossing movies from Hollywood. I was able to download the orginal dataset with it being shown below.
+
+```{r}
 ## Reading the Data In 
-movie_data <- read.csv('data/grossing.csv')
+movie_orginal <- read.csv('data/grossing.csv')
+movie_orginal %>%
+  glimpse()
+```
+
+## Dataset Transformation
+
+### From the orginal file I made a few small changes to make it more useable for the visualizations. Such as I broke up the Movie Runtime column into two seperate columns Hours and Minutes. I also had to break up the genre column from having a list of all the genres related to a movie. To only having one genre per a movie. This might not be the most accurate but by taking the first listing from the list it was the most efficient way of filtering the genre to make it one genre per a movie. I did these changes in a seperate file to keep the data seperate between the orginal data and the edited data. Once the data was uploaded I began checking the dataset and editing the dataframe by renaming columns, removing NA values, and looking at the data.
+
+### Some of the data in the dataset that we will be using is Movie Title, Domestic Sales(Sales from US in $), Internation Sales(Sales NOT from US in $), World Sales(Total of Domestic and International Sales), Genre (Type of Movie), and Content/License (Maturity Rating for the film). 
+
+```{r}
+## Reading the Data In 
+movie_data <- read.csv('data/grossing_edit.csv')
+
+# Renaming Columns
+movie_data <- movie_data %>%
+  rename(Domestic_Sales = Domestic.Sales..in... )
+
+movie_data <- movie_data %>%
+  rename(International_Sales = International.Sales..in... )
+
+movie_data <- movie_data %>%
+  rename(World_Sales = World.Sales..in... )
+
+movie_data <- movie_data %>%
+  rename(Movie_ID = ï.. )
+
+movie_data <- movie_data %>%
+  rename(Content = License )
+
+# Removing NA Values from Columns Used
+movie_data$Min[is.na(movie_data$Min)] = 0
+
+movie_data$Content[is.na(movie_data$Content)] = "NR"
+
+# Checking for NA values
+colSums(is.na(movie_data))
+
+# Looking at the Data
+movie_data %>%
+  glimpse()
+
+```
+
+# Question 1: How does domestic sales differ from international sales for the Top 50 and Top 25 All Time Grossing Films?
+
+## Graph 1: Line Plot of Domestic vs International Sales for Top 50 All Time Grossing Films
+
+```{r}
+## Graph 1
+# Reshaping the Data frame from Wide format to Long format
+movie_sales <-movie_data  %>%
+  pivot_longer(Domestic_Sales:International_Sales, names_to = 'Sales_Type', values_to = 'Sales')
+
+# Creating the Graph for Sales of Top 50 Movies
+movie_sales %>%
+  filter(Movie_ID <= 50) %>%
+  ggplot(aes(x = Movie_ID,
+             y = Sales, 
+             color = Sales_Type)) +
+  geom_point()+
+  geom_line()+
+  theme_hc() +
+  scale_color_colorblind() +
+  theme(panel.grid.minor.y = element_line(color = "black",
+                                          size = 0.1,
+                                          linetype = 2))+
+  theme(panel.grid.major.y = element_line(color = "black",
+                                          size = 0.1,
+                                          linetype = 2))+
+  labs(y = "Sales",
+       x = 'Movie_ID',
+       color = 'Sales Type',
+       title = "Domestic Sales vs International Sales for Top 50 Grossing Films",
+       caption = "Data from Kaggle")
+
+```
+
+## Graph 2: Bar Graph of Domestic Sales vs International Sales for Top 25 All Time Grossing Films. 
+
+### Ordered by Least Sales to Most Sales
+
+```{r}
+# Graph 2
+movie_sales %>%
+  filter(Movie_ID <= 25) %>%
+  ggplot(aes(x = reorder(Movie_ID, Sales), 
+             y = Sales,
+             fill = Sales_Type)) +
+  geom_col(position = "dodge")+
+  theme_hc() +
+  theme(panel.grid.major.y = element_line(color = "black",
+                                          size = 0.1,
+                                          linetype = 2))+
+  theme(panel.grid.minor.y = element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 2))+
+  scale_fill_colorblind() +
+  labs(y = "Sales",
+       x = 'Movie ID',
+       fill = 'Sales Type',
+       title = "Domestic Sales vs International Sales for Top 25 Grossing Films",
+       caption = "Data from Kaggle")
+```
+
+### Answer: I believe that there is a big desparity between domestic and international sales as shown with the higher grossing movies. The further you go down the rankings especially after the top 10 films you can see that the domestic and international sales are much more compariable. 
+
+# Question 2: How does movie runtime effect total movie sales?
+
+## Graph 1: Line Plot of Movie Runtime vs Worldwide Sales
+
+```{r}
+# Creating Runtime with the hours and minites columns
+movie_runtime <- movie_data %>%
+ mutate(runtime = movie_data$Hour * 60 + movie_data$Min)
+
+# Creating the graph
+movie_runtime %>%
+  ggplot(aes(x = runtime,
+             y = World_Sales,
+             color = factor(Hour),
+             )) +
+  geom_line()+
+  theme_hc() +
+   theme(panel.grid.minor.y = element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 2))+
+  theme(panel.grid.major.y = element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 2))+
+   theme(panel.grid.minor.x = element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 2))+
+  theme(panel.grid.major.x = element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 2))+
+  scale_color_colorblind() +
+  labs(y = "World Sales",
+       x = 'Movie_ID',
+       color = 'Hour',
+       title = "Length of Movie Runtime vs Movie Sales",
+       caption = "Data from Kaggle")
+
+```
+
+## Graph 2: Scatter Plot of Movie Runtime vs Worldwide Sales
+
+```{r}
+# Creating the graph from movie_runtime
+movie_runtime %>%
+  ggplot(aes(x = runtime,
+             y = World_Sales, 
+             color = factor(Hour)
+             )) +
+  geom_jitter() +
+  geom_smooth(method = "lm")+
+  scale_y_continuous(limits = c(0,3000000000))+
+  theme_hc()+
+  scale_color_colorblind() +
+  labs(y = "World Sales",
+       x = 'Runtime (Minutes)',
+       color = 'Hours',
+       title = "Length of Movie Runtime vs Movie Sales",
+       caption = "Data from Kaggle")
+```
+
+### Answer: To my surprise these graphs are showing us that with a longer movie runtime the sales will typically increase. This can be seen with the second graph where movies over 2 hours typically had a higher rate of sales. This was shown with the avgerage slope of the values in each hour block. 
+
+# Question 3: How does Movie Rating effect World Wide Sales?
+
+## Graph 1: Bar Graph of Movie Rating vs World Wide Sales
+
+```{r}
+# Getting Rid of NA data and creating new table
+movie_rating <- movie_data %>%
+  na.omit(movie_data)
+
+# Graphing the data
+movie_rating %>%
+  ggplot(aes(x = Content,
+             y = World_Sales, 
+             fill = Content)) +
+    geom_col()+
+    theme_hc() +
+     theme(panel.grid.minor.y = element_line(color = "black",
+                                            size = 0.1,
+                                            linetype = 2))+
+    theme(panel.grid.major.y = element_line(color = "black",
+                                            size = 0.1,
+                                            linetype = 2))+
+    scale_x_discrete(limits = c('PG-13','PG','R','NR','G'))+
+    scale_fill_colorblind() +
+    labs(y = "World Sales",
+         x = 'Content Rating',
+         fill = 'Content Rating',
+         title = "Content Rating vs Movie Sales",
+         caption = "Data from Kaggle")
+```
+
+### Answer: I believe this graph shows us that typically movies with a content rating of PG-13 typically lead to higher sales. I believe that is due to it being the most common and most popular rating for movies compared to the other ones which had less movies with the content ratings.
+
+# Question 4: How does Genre Effect World Wide Sales?
+
+## Graph 1: Bar Graph of Genre vs World Wide Sales
+
+```{r}
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+movie_data %>%
+ggplot(aes(y = Genre,
+           x = World_Sales, 
+           fill = Genre)) +
+  scale_fill_manual(values = safe_colorblind_palette)+
+  scale_y_discrete(limits = c( 'Fantasy','Documentary','Comedy','Animation','Horror','Mystery','Biography','Crime','Adventure', 'Drama','Action'))+
+  geom_col(position = "dodge", stat = "identity")+
+  theme_hc() +
+  theme(panel.grid.minor.x = element_line(color = "black",
+                                          size = 0.1,
+                                          linetype = 2))+
+  theme(panel.grid.major.x = element_line(color = "black",
+                                          size = 0.1,
+                                          linetype = 2))+
+  labs(x = "World Sales",
+       y = 'Genre',
+       fill = 'Genre Type',
+       title = "Genre Type vs Movie Sales",
+       caption = "Data from Kaggle")
+
+```
+
+### Answer: This shows us that typically action movies had the sales out of all the genres. I believe this is similiar to the content rating where it is showing us that due to action movies being the most common genre they had the most sales and movies being released.
