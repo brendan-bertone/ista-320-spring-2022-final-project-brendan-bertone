@@ -11,7 +11,7 @@ library(RColorBrewer)
 library(ggthemes)
 library(knitr)
 library(rcartocolor)
-library(forcats)
+
 opts_chunk$set(echo = TRUE)
 ```
 
