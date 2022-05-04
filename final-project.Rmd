@@ -236,7 +236,7 @@ ggplot(aes(y = Genre,
            fill = Genre)) +
   scale_fill_manual(values = safe_colorblind_palette)+
   scale_y_discrete(limits = c( 'Fantasy','Documentary','Comedy','Animation','Horror','Mystery','Biography','Crime','Adventure', 'Drama','Action'))+
-  geom_col(position = "dodge", stat = "identity")+
+  geom_col(position = "dodge")+
   theme_hc() +
   theme(panel.grid.minor.x = element_line(color = "black",
                                           size = 0.1,
